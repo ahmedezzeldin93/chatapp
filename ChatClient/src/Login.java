@@ -8,6 +8,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
@@ -58,10 +59,21 @@ public class Login {
 				try {	
 						String userType = radioGroup.getSelection().getActionCommand();
 						char[] pass = passwordField.getPassword();
-						String passwordString= pass.toString();
-						new Client(ipTextField.getText(),loginNameTextField.getText(),passwordString,userType);
-						login.setVisible(false);
-						login.dispose();
+						//System.out.print(pass);
+						String passwordString="";
+						for(int i=0; i<pass.length;i++){
+							passwordString += pass[i];
+						}
+						System.out.println(passwordString);
+						String username = loginNameTextField.getText();
+						if(username.equals("") || pass.length==0){
+							JFrame failedFrame = new JFrame("Alert");
+							JOptionPane.showMessageDialog(failedFrame, "Username and Password can't be NULL");
+						}else{
+							new Client(ipTextField.getText(),loginNameTextField.getText(),passwordString,userType);
+							login.setVisible(false);
+							login.dispose();
+						}
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -81,12 +93,23 @@ public class Login {
 				// TODO Auto-generated method stub
 				if(e.getKeyCode() == KeyEvent.VK_ENTER){
 					try {
-							String userType = radioGroup.getSelection().getActionCommand();
-							char[] pass = passwordField.getPassword();
-							String passwordString= pass.toString();
-							new Client(ipTextField.getText(),loginNameTextField.getText(),passwordString ,userType);
+						String userType = radioGroup.getSelection().getActionCommand();
+						char[] pass = passwordField.getPassword();
+						//System.out.print(pass);
+						String passwordString=null;
+						for(int i=0; i<pass.length;i++){
+							passwordString += pass[i];
+						}
+						System.out.println(passwordString);
+						String username = loginNameTextField.getText();
+						if(username.equals("") || pass.length==0){
+							JFrame failedFrame = new JFrame("Alert");
+							JOptionPane.showMessageDialog(failedFrame, "Username and Password can't be NULL");
+						}else{
+							new Client(ipTextField.getText(),loginNameTextField.getText(),passwordString,userType);
 							login.setVisible(false);
 							login.dispose();
+						}
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();

@@ -87,12 +87,15 @@ public class Client implements Runnable {
 		setupUI(loginName);
 		din = new DataInputStream(socket.getInputStream());
 		dout = new DataOutputStream(socket.getOutputStream());
-		System.out.println("1");
 		
 		if(din.readUTF().equals("LOGIN:"))
 			dout.writeUTF(loginName);
-		if(din.readUTF().equals("PASS:"))
+		if(din.readUTF().equals("PASS:")){
 			dout.writeUTF(password);
+			System.out.println(password);
+		}
+			
+		
 		if(din.readUTF().equals("ROLE:"))
 			dout.writeUTF(userType);
 
@@ -161,7 +164,7 @@ public class Client implements Runnable {
 					//socketVector.add(socket);
 					
 					String chatId = din.readUTF();
-					Chat chat = new Chat(this,socket,peerChat+"-"+loginName,loginName,chatId);
+					Chat chat = new Chat(this,socket,loginName+"-"+peerChat,loginName,chatId);
 					System.out.println(loginName+"-"+peerChat+" "+ loginName);
 					chatVector.add(chat);
 					System.out.println("chatVector: "+ chatVector.size());
