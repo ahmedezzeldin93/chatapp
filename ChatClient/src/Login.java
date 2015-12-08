@@ -9,6 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
@@ -18,10 +19,12 @@ public class Login {
 		
 		final JFrame login = new JFrame("Login");
 		JPanel panel = new JPanel();
-		JLabel loginNameLabel = new JLabel("Name:");
-		final JTextField loginNameTextField = new JTextField(20);
+		JLabel loginNameLabel = new JLabel("Username:");
+		final JTextField loginNameTextField = new JTextField(15);
+		JLabel passwordLabel = new JLabel("Password:");
+		JPasswordField passwordField = new JPasswordField(15);
 		JLabel ipLabel = new JLabel("   IP:");
-		final JTextField ipTextField = new JTextField(20);
+		final JTextField ipTextField = new JTextField(15);
 		JButton enterBtn = new JButton("Login");
 		JRadioButton adminBtn = new JRadioButton("Admin");
 		adminBtn.setActionCommand("Admin");
@@ -33,6 +36,8 @@ public class Login {
 	    panel.add(ipTextField);
 	    panel.add(loginNameLabel);
 		panel.add(loginNameTextField);
+		panel.add(passwordLabel);
+		panel.add(passwordField);
 		radioGroup.add(adminBtn);
 	    radioGroup.add(userBtn);
 	    userBtn.setSelected(true);
@@ -40,7 +45,7 @@ public class Login {
 	    panel.add(adminBtn);
 	    panel.add(enterBtn);
 		
-		login.setSize(300,120);
+		login.setSize(280,150);
 		login.add(panel);
 		login.setVisible(true);
 		login.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -52,7 +57,9 @@ public class Login {
 				// TODO Auto-generated method stub
 				try {	
 						String userType = radioGroup.getSelection().getActionCommand();
-						new Client(ipTextField.getText(),loginNameTextField.getText(), userType);
+						char[] pass = passwordField.getPassword();
+						String passwordString= pass.toString();
+						new Client(ipTextField.getText(),loginNameTextField.getText(),passwordString,userType);
 						login.setVisible(false);
 						login.dispose();
 				} catch (IOException e1) {
@@ -75,7 +82,9 @@ public class Login {
 				if(e.getKeyCode() == KeyEvent.VK_ENTER){
 					try {
 							String userType = radioGroup.getSelection().getActionCommand();
-							new Client(ipTextField.getText(),loginNameTextField.getText(), userType);
+							char[] pass = passwordField.getPassword();
+							String passwordString= pass.toString();
+							new Client(ipTextField.getText(),loginNameTextField.getText(),passwordString ,userType);
 							login.setVisible(false);
 							login.dispose();
 					} catch (IOException e1) {

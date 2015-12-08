@@ -3,9 +3,13 @@ import java.awt.event.ActionListener;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,13 +22,16 @@ import javax.swing.JPanel;
 class User {
 	int userId;
 	String loginName;
+	String password;
 	Socket userSocket;
+	//String userIP;
 	String userType;
 	String userStatus;
 
-	public User(String loginName, int userId ,Socket userSocket, String userType){
+	public User(String loginName,String password,int userId ,Socket userSocket, String userType){
 		this.userId = userId;
 		this.loginName = loginName;
+		this.password = password;
 		this.userSocket = userSocket;
 		this.userType = userType;
 		this.userStatus = "Online";
@@ -34,7 +41,9 @@ class User {
 		// TODO Auto-generated method stub
 		return this.userId+" "+ this.loginName;
 	}
-	
+	public void setSocket(Socket socket){
+		this.userSocket = socket;
+	}
 }
 
 class Conversation {
@@ -96,6 +105,7 @@ class Conversation {
 	 static int userId=0;
 	 static int convId=0;
      private Socket clientSocket;
+    // private ServerSocket clientServerSocket;
      private Vector<User> userVector = new Vector<User>();
      private Vector<Conversation> convs= new Vector<Conversation>();
      DataInputStream din;
@@ -107,21 +117,47 @@ class Conversation {
         this.convs=convs;
         din= new DataInputStream(clientSocket.getInputStream());
         dout= new DataOutputStream(clientSocket.getOutputStream());
-        loginName = clientAuth();
+        loginName = clientAuth();        
     }
     
     private String clientAuth(){
         String name="";
-        try{            
+        try{           
+        	System.out.println("Auth started");
             dout.writeUTF("LOGIN:");
             name=din.readUTF();
+            dout.writeUTF("PASS:");
+            String password=din.readUTF();
             dout.writeUTF("ROLE:");
             String role=din.readUTF();
-            this.user = new User(name,userId ,clientSocket, role);
-            userId++;
-            System.out.println(user.loginName + " has logged in.");
-            userVector.add(user);     
-            
+            //String clientIP = din.readUTF();
+            int i=0;
+            while(i<userVector.size()){
+            	System.out.println("A");
+            	if(userVector.get(i).loginName.equals(name) && userVector.get(i).password.equals(password)){
+            		System.out.println("B");
+            		userVector.get(i).userStatus = "Online";
+            		this.user = userVector.get(i);
+            		user.setSocket(clientSocket);
+            		this.start();
+            		break;
+            	}
+            	if(userVector.get(i).loginName.equals(name)){
+            		if(!userVector.get(i).password.equals(password)){
+            			dout.writeUTF("FAILED");
+            			break;
+            		}
+            	}
+            	i++;
+            }
+            if(i==userVector.size()){
+            	this.user = new User(name,password,userId ,clientSocket, role);
+            	userId++;
+            	System.out.println(user.loginName + " has logged in.");
+            	userVector.add(user);
+            	this.start();
+            }
+              
         } catch (IOException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -176,27 +212,30 @@ class Conversation {
                 	convId++;
                     convs.add(conv);
                     conv.convMembers.add(user);
-                    conv.convMembers.add(userVector.get(peerId));
-                   
-                    System.out.println("Conversation Created Succesfully" + "ID: "+ convIdString);
-                    dout.writeUTF("DOCHAT");
-                    dout.writeUTF(convIdString);
-                    System.out.println("Chat:" + convIdString);
-                    
-                    Socket chattedUserSocket = userVector.get(peerId).userSocket;
-                    DataOutputStream doutChat = new DataOutputStream(chattedUserSocket.getOutputStream());
-                    doutChat.writeUTF("PEERCHAT");
-                    doutChat.writeUTF(convIdString);
-                    doutChat.writeUTF(userVector.get(peerId).loginName);
-                    System.out.println("PEERCHAT:" + convIdString);
-                    
-                    ArrayList<User> users= convs.get(peerConvId).convMembers;
-                    for (User user : users) {
-                        DataOutputStream dout= new DataOutputStream(user.userSocket.getOutputStream());
-                        dout.writeUTF("LOGINCONV");
+                    if(!userVector.get(peerId).userStatus.equals("Offline")){
+                    	conv.convMembers.add(userVector.get(peerId));
+                        System.out.println("Conversation Created Succesfully" + "ID: "+ convIdString);
+                        dout.writeUTF("DOCHAT");
                         dout.writeUTF(convIdString);
-                        dout.writeUTF(loginName + " opened chat with "+ userVector.get(peerId).loginName);
-                   }
+                        //dout.writeUTF(userVector.get(peerId).userIP);
+                        System.out.println("Chat:" + convIdString);
+                        
+                        Socket chattedUserSocket = userVector.get(peerId).userSocket;
+                        DataOutputStream doutChat = new DataOutputStream(chattedUserSocket.getOutputStream());
+                        doutChat.writeUTF("PEERCHAT");
+                        doutChat.writeUTF(convIdString);
+                        doutChat.writeUTF(userVector.get(peerId).loginName);
+                        System.out.println("PEERCHAT:" + convIdString);
+                        
+                        ArrayList<User> users= convs.get(peerConvId).convMembers;
+                        for (User user : users) {
+                            DataOutputStream dout= new DataOutputStream(user.userSocket.getOutputStream());
+                            dout.writeUTF("LOGINCONV");
+                            dout.writeUTF(convIdString);
+                            dout.writeUTF(loginName + " opened chat with "+ userVector.get(peerId).loginName);
+                       }
+                    }
+
                 }
                 else if(msg.equals("DATA")){
                 	String convID = din.readUTF();
@@ -264,7 +303,7 @@ class Conversation {
                 else if(msg.equals("LOGOUT")){
                 	System.out.println("Ana 3yz alog out");
                 	dout.writeUTF("LOGOUT");
-                	Server.removeUser(this.user.userId);
+                	Server.userMakeOffline(this.user.userId);
                 	for(Conversation conv: convs){
                 		conv.removeMember(this.user.userId);
                 	}
@@ -329,6 +368,16 @@ class Conversation {
 		 startServerBtn.addActionListener(new ButtonListener());
 		 stopServerBtn.addActionListener(new ButtonListener());
 	 }
+	 
+	 static void userMakeOffline(int userId){
+		 int i=0;
+		 while(i<userVector.size()){
+			 if(userVector.get(i).userId == userId){
+				 userVector.get(i).userStatus="Offline";
+			 }
+			 i++;
+		 }
+	 }
 
 	 static boolean removeUser(int userId){
 		 int i=0;
@@ -370,7 +419,7 @@ class Conversation {
 			 try {
 				 socket = serverSocket.accept();
 				 ClientHandler clientHandler = new ClientHandler(socket,userVector,activeConvs);
-				 clientHandler.start();
+				 //clientHandler.start();
 			 } catch (IOException e) {
 				 // TODO Auto-generated catch block
 				 e.printStackTrace();
@@ -383,6 +432,26 @@ class Conversation {
 		 public void actionPerformed(ActionEvent e) {
 			 if (e.getActionCommand().equals("Start")) {
 				 System.out.println("Server Started ..");
+				 Enumeration e1=null;
+				try {
+					e1 = NetworkInterface.getNetworkInterfaces();
+				} catch (SocketException e2) {
+					// TODO Auto-generated catch block
+					e2.printStackTrace();
+				}
+				 while(e1.hasMoreElements())
+				 {
+				     NetworkInterface n = (NetworkInterface) e1.nextElement();
+				     Enumeration ee = n.getInetAddresses();
+				     while (ee.hasMoreElements())
+				     {
+				         InetAddress i = (InetAddress) ee.nextElement();
+				         if(i.isSiteLocalAddress()){
+				        	 System.out.println("IP: "+i.getHostAddress());
+				         }
+				         
+				     }
+				 }
 				 start();
 			 }else if(e.getActionCommand().equals("Stop")){
 				 System.out.println("Server Stopped ..");
