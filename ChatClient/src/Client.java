@@ -6,6 +6,7 @@ import java.awt.event.WindowEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Vector;
@@ -19,7 +20,6 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
@@ -27,21 +27,16 @@ import javax.swing.JTextField;
 
 public class Client implements Runnable {
 	
-	//ServerSocket serverSocket;
-	//Vector<Socekt> socketVector = new Vector<Socket>();
-	//String myIP;
-	//InetAddress inetAddress;
+	ServerSocket serverSocket;
 	Socket socket;
 	static Thread mainThread;
 	static String loginName;
-	String password;
 	String userType;
 	static DataInputStream din;
 	static DataOutputStream dout;
 	static String msg;
 	private Vector<Chat> chatVector = new Vector<Chat>();
 	JFrame mainFrame;
-	JFrame failedFrame;
 	JPanel panel;
 	JLabel headerLabel,statusLabel,groupLabel,clientLabel;
 	static DefaultListModel<String> groupsListModel, clientsListModel;
@@ -55,60 +50,29 @@ public class Client implements Runnable {
 	static String userId;
 	static String groupChat;
 		
-	public Client(String ip, String loginName,String password ,String userType) throws UnknownHostException, IOException{
+	public Client(String ip, String loginName, String userType) throws UnknownHostException, IOException{
 			
 		this.loginName = loginName;
 		this.userType = userType;
-		this.password = password;
-		socket = new Socket(ip,8888);
-//		serverSocket = new ServerSocket(8888);
-//		 Enumeration e1=null;
-//		try {
-//			e1 = NetworkInterface.getNetworkInterfaces();
-//		} catch (SocketException e2) {
-//			// TODO Auto-generated catch block
-//			e2.printStackTrace();
-//		}
-//		 while(e1.hasMoreElements())
-//		 {
-//		     NetworkInterface n = (NetworkInterface) e1.nextElement();
-//		     Enumeration ee = n.getInetAddresses();
-//		     while (ee.hasMoreElements())
-//		     {
-//		         inetAddress = (InetAddress) ee.nextElement();
-//		         if(inetAddress.isSiteLocalAddress()){
-//		        	System.out.println("IP: "+inetAddress.getHostAddress());
-//					myIP =inetAddress.toString()
-//					break;
-//		         }
-//		         
-//		     }
-//		 }
+		socket = new Socket(ip,8888);	
+		
 		setupUI(loginName);
 		din = new DataInputStream(socket.getInputStream());
 		dout = new DataOutputStream(socket.getOutputStream());
-		System.out.println("1");
 		
 		if(din.readUTF().equals("LOGIN:"))
 			dout.writeUTF(loginName);
-		if(din.readUTF().equals("PASS:"))
-			dout.writeUTF(password);
 		if(din.readUTF().equals("ROLE:"))
 			dout.writeUTF(userType);
-
+		
 		mainThread = new Thread(this);
 		mainThread.start();
 		System.out.println("Thread Started");
-
+		
 		Thread refresherThread = new Thread(new Refresher());
 		refresherThread.start();
 		System.out.println("Refresher Thread Started");
 		refresherThread=null;
-
-//		if(din.readUTF().equals("IP:")){
-//			dout.writeUTF(myIP);
-//		}
-
 	}
 	
 
@@ -125,12 +89,6 @@ public class Client implements Runnable {
 						if(chat.chatId.equals(chatId))
 							chat.setText(text);
 					}
-				}else if(msg.equals("FAILED")){
-					System.out.println("Auth Failed");
-					mainFrame.setVisible(false);
-					mainFrame.dispose();
-					failedFrame = new JFrame("Alert");
-					JOptionPane.showMessageDialog(failedFrame, "Wrong Password");
 				}
 				else if(msg.equals("LOGOUTCONV")){
 					String chatId = din.readUTF();
@@ -156,10 +114,6 @@ public class Client implements Runnable {
 					chatThread.start();
 				}
 				else if(msg.equals("DOCHAT")){
-					//String peerIP = din.readUTF();
-					//Socket socket = new Socket(peerIP,8888); 
-					//socketVector.add(socket);
-					
 					String chatId = din.readUTF();
 					Chat chat = new Chat(this,socket,peerChat+"-"+loginName,loginName,chatId);
 					System.out.println(loginName+"-"+peerChat+" "+ loginName);
@@ -169,9 +123,6 @@ public class Client implements Runnable {
 					chatThread.start();
 				}
 				else if(msg.equals("PEERCHAT")){
-					//String peerIP = din.readUTF();
-					//Socket socket = new Socket(peerIP,8888); 
-					//socketVector.add(socket);
 					String chatId = din.readUTF();
 					String peerName = din.readUTF();
 					Chat chat = new Chat(this,socket,peerName+"-"+loginName,loginName,chatId);
@@ -191,14 +142,7 @@ public class Client implements Runnable {
 					mainFrame.setVisible(false);
 					mainFrame.dispose();
 					System.exit(1);
-				}
-				else if(msg.equals("LOGIN")){
-					din.close();
-					dout.close();
-					socket.close();
-					mainFrame.setVisible(false);
-					mainFrame.dispose();
-					System.exit(1);
+					
 				}
 				else if(msg.equals("CLIENTS")){
 					viewClientList();
