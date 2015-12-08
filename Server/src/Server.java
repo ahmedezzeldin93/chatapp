@@ -224,7 +224,7 @@ class Conversation {
                         DataOutputStream doutChat = new DataOutputStream(chattedUserSocket.getOutputStream());
                         doutChat.writeUTF("PEERCHAT");
                         doutChat.writeUTF(convIdString);
-                        doutChat.writeUTF(userVector.get(peerId).loginName);
+                        doutChat.writeUTF(this.user.loginName);
                         System.out.println("PEERCHAT:" + convIdString);
                         
                         ArrayList<User> users= convs.get(peerConvId).convMembers;
