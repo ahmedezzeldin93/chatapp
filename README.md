@@ -1,5 +1,7 @@
 # chatapp
 
+#### A Messenger app implements client/server and peer-to-peer communication in Java and swing for gui.
+
 ## Protocol Design
 ![alt tag](http://i.imgur.com/p0YRKMv.png)
 ![alt tag](http://i.imgur.com/BiQjrh5.png)
